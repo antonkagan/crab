@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Everything is Crab</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        <div id="ui-overlay">
+            <div id="start-screen" class="screen">
+                <h1>Everything is Crab</h1>
+                <p>Evolve, fight, survive. But beware... everything evolves into a crab!</p>
+                <button id="start-button">Start Game</button>
+            </div>
+            <div id="mutation-screen" class="screen hidden">
+                <h2>Choose Your Mutation</h2>
+                <div id="mutation-options"></div>
+            </div>
+            <div id="game-over-screen" class="screen hidden">
+                <h2 id="game-over-title">Game Over</h2>
+                <p id="game-over-message"></p>
+                <button id="restart-button">Play Again</button>
+            </div>
+            <div id="hud" class="hidden">
+                <div id="health-bar">
+                    <div id="health-fill"></div>
+                    <span id="health-text">100/100</span>
+                </div>
+                <div id="evolution-points">Evolution Points: <span id="points">0</span></div>
+                <div id="apple-counter">Apples: <span id="apples-count">0</span>/10</div>
+                <div id="surface-indicator">Surface: <span id="surface-type">Grass</span></div>
+                <div id="boss-tracker">Bosses Defeated: <span id="bosses-killed">0</span>/3</div>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="script.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,249 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+#game-canvas {
+    display: block;
+    background: #0f0f1e;
+    width: 100%;
+    height: 100%;
+}
+
+#ui-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.screen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    background: rgba(26, 26, 46, 0.95);
+    padding: 40px;
+    border-radius: 20px;
+    border: 2px solid #16213e;
+    pointer-events: all;
+    min-width: 400px;
+}
+
+.screen.hidden {
+    display: none;
+}
+
+.screen h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #ff6b6b, #ffa500);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.screen h2 {
+    font-size: 32px;
+    margin-bottom: 20px;
+    color: #ffa500;
+}
+
+.screen p {
+    font-size: 18px;
+    margin-bottom: 30px;
+    color: #ccc;
+}
+
+button {
+    background: linear-gradient(135deg, #ff6b6b, #ffa500);
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    font-size: 18px;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 20px rgba(255, 107, 107, 0.4);
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+#mutation-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.mutation-option {
+    background: rgba(22, 33, 62, 0.8);
+    border: 2px solid #16213e;
+    padding: 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.mutation-option:hover {
+    border-color: #ffa500;
+    background: rgba(255, 165, 0, 0.1);
+    transform: translateX(5px);
+}
+
+.mutation-option h3 {
+    color: #ffa500;
+    margin-bottom: 10px;
+}
+
+.mutation-option p {
+    color: #ccc;
+    font-size: 14px;
+    margin: 5px 0;
+}
+
+.mutation-option .crab-risk {
+    color: #ff6b6b;
+    font-weight: 600;
+}
+
+#hud {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    pointer-events: all;
+}
+
+#hud.hidden {
+    display: none;
+}
+
+#health-bar {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid #16213e;
+    border-radius: 10px;
+    padding: 5px;
+    width: 300px;
+    height: 40px;
+    position: relative;
+    margin-bottom: 10px;
+}
+
+#health-fill {
+    background: linear-gradient(90deg, #ff6b6b, #ffa500);
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.3s;
+    width: 100%;
+}
+
+#health-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: 600;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+#evolution-points {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid #16213e;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #ffa500;
+}
+
+#evolution-points span {
+    font-weight: 600;
+    color: #fff;
+}
+
+#apple-counter {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid #16213e;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #ff6b6b;
+    margin-top: 10px;
+}
+
+#apple-counter span {
+    font-weight: 600;
+    color: #fff;
+}
+
+#surface-indicator {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid #16213e;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #ffa500;
+    margin-top: 10px;
+}
+
+#surface-indicator span {
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+#surface-indicator span.grass {
+    color: #4ecdc4;
+}
+
+#surface-indicator span.snow {
+    color: #e8f4f8;
+}
+
+#surface-indicator span.desert {
+    color: #ffa500;
+}
+
+#boss-tracker {
+    background: linear-gradient(135deg, rgba(139, 69, 19, 0.6), rgba(255, 215, 0, 0.3));
+    border: 2px solid #ffd700;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #ffd700;
+    margin-top: 10px;
+    font-weight: 600;
+}
+
+#boss-tracker span {
+    font-weight: 700;
+    color: #fff;
+}
