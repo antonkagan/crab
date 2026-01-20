@@ -97,10 +97,16 @@ export default class Renderer {
         
         // Draw main body
         this.ctx.save();
-        this.ctx.fillStyle = features.color;
-        this.ctx.beginPath();
-        this.ctx.arc(screen.x, screen.y, player.radius, 0, Math.PI * 2);
-        this.ctx.fill();
+        
+        // If player has a creature form, draw it instead of the default circle
+        if (player.currentCreatureForm) {
+            this.drawCreatureForm(player.currentCreatureForm, screen, player.radius, features.color);
+        } else {
+            this.ctx.fillStyle = features.color;
+            this.ctx.beginPath();
+            this.ctx.arc(screen.x, screen.y, player.radius, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
         
         // Draw shell if present
         if (features.hasShell) {
@@ -108,6 +114,50 @@ export default class Renderer {
             this.ctx.lineWidth = 3;
             this.ctx.beginPath();
             this.ctx.arc(screen.x, screen.y, player.radius + 5, 0, Math.PI * 2);
+            this.ctx.stroke();
+        }
+        
+        // Draw wings
+        if (features.hasWings) {
+            const wingFlap = Math.sin(Date.now() * 0.015) * 0.4; // Animated flapping
+            
+            // Left wing
+            this.ctx.fillStyle = 'rgba(200, 220, 255, 0.7)';
+            this.ctx.beginPath();
+            this.ctx.ellipse(
+                screen.x - player.radius * 0.8, 
+                screen.y - player.radius * 0.3,
+                player.radius * 1.2, 
+                player.radius * 0.5, 
+                -0.5 + wingFlap, 
+                0, Math.PI * 2
+            );
+            this.ctx.fill();
+            
+            // Right wing
+            this.ctx.beginPath();
+            this.ctx.ellipse(
+                screen.x + player.radius * 0.8, 
+                screen.y - player.radius * 0.3,
+                player.radius * 1.2, 
+                player.radius * 0.5, 
+                0.5 - wingFlap, 
+                0, Math.PI * 2
+            );
+            this.ctx.fill();
+            
+            // Wing details (veins)
+            this.ctx.strokeStyle = 'rgba(150, 180, 220, 0.5)';
+            this.ctx.lineWidth = 1;
+            // Left wing veins
+            this.ctx.beginPath();
+            this.ctx.moveTo(screen.x - player.radius * 0.5, screen.y - player.radius * 0.2);
+            this.ctx.lineTo(screen.x - player.radius * 1.8, screen.y - player.radius * 0.5);
+            this.ctx.stroke();
+            // Right wing veins
+            this.ctx.beginPath();
+            this.ctx.moveTo(screen.x + player.radius * 0.5, screen.y - player.radius * 0.2);
+            this.ctx.lineTo(screen.x + player.radius * 1.8, screen.y - player.radius * 0.5);
             this.ctx.stroke();
         }
         
@@ -179,6 +229,35 @@ export default class Renderer {
             this.drawLeg(screen.x + player.radius * 0.5, screen.y + player.radius * 0.5, screen.x + player.radius * 0.8, screen.y + player.radius * 1.5);
         }
         
+        // Draw tail
+        if (features.hasTail) {
+            const tailWag = Math.sin(Date.now() * 0.008) * 0.3; // Animated wagging
+            this.ctx.strokeStyle = features.color;
+            this.ctx.fillStyle = features.color;
+            this.ctx.lineWidth = 6;
+            this.ctx.lineCap = 'round';
+            
+            // Draw curved tail with animation
+            this.ctx.beginPath();
+            this.ctx.moveTo(screen.x - player.radius * 0.5, screen.y + player.radius * 0.3);
+            this.ctx.quadraticCurveTo(
+                screen.x - player.radius * 1.5 + tailWag * 20, 
+                screen.y + player.radius * 0.5,
+                screen.x - player.radius * 1.8 + tailWag * 30, 
+                screen.y - player.radius * 0.2
+            );
+            this.ctx.stroke();
+            
+            // Tail tip
+            this.ctx.beginPath();
+            this.ctx.arc(
+                screen.x - player.radius * 1.8 + tailWag * 30, 
+                screen.y - player.radius * 0.2, 
+                4, 0, Math.PI * 2
+            );
+            this.ctx.fill();
+        }
+        
         // Draw eyes
         this.ctx.fillStyle = '#fff';
         this.ctx.beginPath();
@@ -197,7 +276,411 @@ export default class Renderer {
         this.ctx.arc(screen.x + 5, screen.y - 5, 2, 0, Math.PI * 2);
         this.ctx.fill();
         
+        // Draw super evolution visual effects
+        if (player.superEvolutions) {
+            this.renderSuperEvolutionEffects(player, screen);
+        }
+        
+        // Draw active ability effects
+        if (player.activeAbilities) {
+            // Iron Shell - golden invincibility shield
+            if (player.activeAbilities.ironShell) {
+                this.ctx.strokeStyle = '#FFD700';
+                this.ctx.lineWidth = 4;
+                this.ctx.beginPath();
+                this.ctx.arc(screen.x, screen.y, player.radius + 10, 0, Math.PI * 2);
+                this.ctx.stroke();
+                
+                const shellGradient = this.ctx.createRadialGradient(
+                    screen.x, screen.y, player.radius,
+                    screen.x, screen.y, player.radius + 20
+                );
+                shellGradient.addColorStop(0, 'rgba(255, 215, 0, 0.3)');
+                shellGradient.addColorStop(1, 'transparent');
+                this.ctx.fillStyle = shellGradient;
+                this.ctx.beginPath();
+                this.ctx.arc(screen.x, screen.y, player.radius + 20, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+            
+            // Flight - sky blue aura
+            if (player.activeAbilities.flight) {
+                const flightGradient = this.ctx.createRadialGradient(
+                    screen.x, screen.y, player.radius,
+                    screen.x, screen.y, player.radius + 25
+                );
+                flightGradient.addColorStop(0, 'rgba(135, 206, 235, 0.4)');
+                flightGradient.addColorStop(1, 'transparent');
+                this.ctx.fillStyle = flightGradient;
+                this.ctx.beginPath();
+                this.ctx.arc(screen.x, screen.y, player.radius + 25, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // Small feather particles around player
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                for (let i = 0; i < 6; i++) {
+                    const angle = (Date.now() * 0.002 + i * Math.PI / 3) % (Math.PI * 2);
+                    const dist = player.radius + 15 + Math.sin(Date.now() * 0.005 + i) * 5;
+                    this.ctx.beginPath();
+                    this.ctx.arc(
+                        screen.x + Math.cos(angle) * dist,
+                        screen.y + Math.sin(angle) * dist,
+                        2, 0, Math.PI * 2
+                    );
+                    this.ctx.fill();
+                }
+            }
+            
+            // Vanish - transparency effect (already handled by globalAlpha in render)
+            if (player.activeAbilities.vanish) {
+                this.ctx.strokeStyle = 'rgba(255, 140, 0, 0.3)';
+                this.ctx.lineWidth = 2;
+                this.ctx.setLineDash([5, 5]);
+                this.ctx.beginPath();
+                this.ctx.arc(screen.x, screen.y, player.radius + 5, 0, Math.PI * 2);
+                this.ctx.stroke();
+                this.ctx.setLineDash([]);
+            }
+            
+            // Stampede - dust trail
+            if (player.activeAbilities.stampede) {
+                this.ctx.strokeStyle = '#A0A0A0';
+                this.ctx.lineWidth = 4;
+                this.ctx.setLineDash([10, 5]);
+                this.ctx.beginPath();
+                const trailX = screen.x - player.activeAbilities.stampedeDirection.x * 50;
+                const trailY = screen.y - player.activeAbilities.stampedeDirection.y * 50;
+                this.ctx.moveTo(trailX, trailY);
+                this.ctx.lineTo(trailX - player.activeAbilities.stampedeDirection.x * 50, trailY - player.activeAbilities.stampedeDirection.y * 50);
+                this.ctx.stroke();
+                this.ctx.setLineDash([]);
+            }
+        }
+        
+        // Draw bee swarm
+        if (player.beeSwarm && player.beeSwarm.length > 0) {
+            this.renderBeeSwarm(player.beeSwarm);
+        }
+        
         this.ctx.restore();
+    }
+    
+    renderSuperEvolutionEffects(player, screen) {
+        const unlockedCreatures = [];
+        const creatureData = {
+            gorilla: { emoji: '🦍', color: '#8B4513' },
+            crab: { emoji: '🦀', color: '#E53935' },
+            bee: { emoji: '🐝', color: '#FFC107' },
+            elephant: { emoji: '🐘', color: '#78909C' },
+            bird: { emoji: '🐦', color: '#42A5F5' },
+            fox: { emoji: '🦊', color: '#FF7043' }
+        };
+        
+        for (const creature in player.superEvolutions) {
+            if (player.superEvolutions[creature]) {
+                unlockedCreatures.push(creature);
+            }
+        }
+        
+        if (unlockedCreatures.length > 0) {
+            // Draw small orbiting icons for each unlocked super evolution
+            const orbitRadius = player.radius + 30;
+            const time = Date.now() * 0.001;
+            
+            for (let i = 0; i < unlockedCreatures.length; i++) {
+                const creature = unlockedCreatures[i];
+                const data = creatureData[creature];
+                const angle = time + (i * Math.PI * 2 / unlockedCreatures.length);
+                const orbitX = screen.x + Math.cos(angle) * orbitRadius;
+                const orbitY = screen.y + Math.sin(angle) * orbitRadius;
+                
+                // Draw small colored circle
+                this.ctx.fillStyle = data.color;
+                this.ctx.beginPath();
+                this.ctx.arc(orbitX, orbitY, 8, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // Draw emoji
+                this.ctx.font = '10px Arial';
+                this.ctx.fillStyle = '#fff';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(data.emoji, orbitX, orbitY);
+            }
+        }
+    }
+    
+    drawCreatureForm(creature, screen, radius, baseColor) {
+        const creatureColors = {
+            gorilla: '#8B4513',
+            crab: '#E53935',
+            bee: '#FFC107',
+            elephant: '#78909C',
+            bird: '#42A5F5',
+            fox: '#FF7043'
+        };
+        
+        const color = creatureColors[creature] || baseColor;
+        
+        switch (creature) {
+            case 'gorilla':
+                // Draw gorilla - muscular ape shape
+                this.ctx.fillStyle = color;
+                // Body
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x, screen.y, radius * 1.2, radius, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Head
+                this.ctx.beginPath();
+                this.ctx.arc(screen.x, screen.y - radius * 0.7, radius * 0.7, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Arms
+                this.ctx.fillStyle = '#5D4037';
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x - radius * 1.3, screen.y + radius * 0.2, radius * 0.5, radius * 0.3, -0.3, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x + radius * 1.3, screen.y + radius * 0.2, radius * 0.5, radius * 0.3, 0.3, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Face details
+                this.ctx.fillStyle = '#3E2723';
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x, screen.y - radius * 0.5, radius * 0.35, radius * 0.25, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+                break;
+                
+            case 'crab':
+                // Draw crab - wide body with claws
+                this.ctx.fillStyle = color;
+                // Body (wide oval)
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x, screen.y, radius * 1.4, radius * 0.9, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Shell pattern
+                this.ctx.strokeStyle = '#C62828';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.arc(screen.x, screen.y, radius * 0.6, 0, Math.PI, true);
+                this.ctx.stroke();
+                // Big claws
+                this.ctx.fillStyle = '#D32F2F';
+                this.drawClaw(screen.x - radius * 1.5, screen.y - radius * 0.3, 15, -Math.PI / 4);
+                this.drawClaw(screen.x + radius * 1.5, screen.y - radius * 0.3, 15, Math.PI + Math.PI / 4);
+                // Legs
+                this.ctx.strokeStyle = color;
+                this.ctx.lineWidth = 3;
+                for (let i = 0; i < 3; i++) {
+                    // Left legs
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(screen.x - radius * 0.8, screen.y + radius * 0.3 * i);
+                    this.ctx.lineTo(screen.x - radius * 1.5, screen.y + radius * 0.5 + radius * 0.3 * i);
+                    this.ctx.stroke();
+                    // Right legs
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(screen.x + radius * 0.8, screen.y + radius * 0.3 * i);
+                    this.ctx.lineTo(screen.x + radius * 1.5, screen.y + radius * 0.5 + radius * 0.3 * i);
+                    this.ctx.stroke();
+                }
+                // Eye stalks
+                this.ctx.fillStyle = '#fff';
+                this.ctx.beginPath();
+                this.ctx.arc(screen.x - radius * 0.3, screen.y - radius * 0.8, 4, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.arc(screen.x + radius * 0.3, screen.y - radius * 0.8, 4, 0, Math.PI * 2);
+                this.ctx.fill();
+                break;
+                
+            case 'bee':
+                // Draw bee - striped body with wings
+                const wingFlap = Math.sin(Date.now() * 0.02) * 0.4;
+                // Wings
+                this.ctx.fillStyle = 'rgba(200, 220, 255, 0.7)';
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x - radius * 0.8, screen.y - radius * 0.5, radius * 1.0, radius * 0.5, -0.5 + wingFlap, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x + radius * 0.8, screen.y - radius * 0.5, radius * 1.0, radius * 0.5, 0.5 - wingFlap, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Body
+                this.ctx.fillStyle = color;
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x, screen.y, radius * 0.9, radius * 1.1, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Stripes
+                this.ctx.fillStyle = '#1A1A1A';
+                for (let i = -1; i <= 1; i++) {
+                    this.ctx.beginPath();
+                    this.ctx.ellipse(screen.x, screen.y + i * radius * 0.5, radius * 0.85, radius * 0.15, 0, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+                // Stinger
+                this.ctx.fillStyle = '#1A1A1A';
+                this.ctx.beginPath();
+                this.ctx.moveTo(screen.x, screen.y + radius * 1.1);
+                this.ctx.lineTo(screen.x - 4, screen.y + radius * 1.5);
+                this.ctx.lineTo(screen.x + 4, screen.y + radius * 1.5);
+                this.ctx.closePath();
+                this.ctx.fill();
+                break;
+                
+            case 'elephant':
+                // Draw elephant - large round body with trunk and ears
+                this.ctx.fillStyle = color;
+                // Body
+                this.ctx.beginPath();
+                this.ctx.arc(screen.x, screen.y, radius * 1.2, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Ears
+                this.ctx.fillStyle = '#546E7A';
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x - radius * 1.3, screen.y - radius * 0.3, radius * 0.6, radius * 0.8, -0.2, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x + radius * 1.3, screen.y - radius * 0.3, radius * 0.6, radius * 0.8, 0.2, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Trunk
+                this.ctx.strokeStyle = color;
+                this.ctx.lineWidth = 8;
+                this.ctx.lineCap = 'round';
+                this.ctx.beginPath();
+                this.ctx.moveTo(screen.x, screen.y + radius * 0.3);
+                this.ctx.quadraticCurveTo(screen.x, screen.y + radius * 1.5, screen.x - radius * 0.5, screen.y + radius * 1.8);
+                this.ctx.stroke();
+                // Tusks
+                this.ctx.fillStyle = '#ECEFF1';
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x - radius * 0.5, screen.y + radius * 0.6, 4, radius * 0.5, -0.3, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x + radius * 0.5, screen.y + radius * 0.6, 4, radius * 0.5, 0.3, 0, Math.PI * 2);
+                this.ctx.fill();
+                break;
+                
+            case 'bird':
+                // Draw bird - sleek body with beak and wings
+                const birdWingFlap = Math.sin(Date.now() * 0.015) * 0.5;
+                // Wings spread
+                this.ctx.fillStyle = '#1E88E5';
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x - radius * 1.2, screen.y, radius * 1.0, radius * 0.4, -0.3 + birdWingFlap, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x + radius * 1.2, screen.y, radius * 1.0, radius * 0.4, 0.3 - birdWingFlap, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Body
+                this.ctx.fillStyle = color;
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x, screen.y, radius * 0.8, radius * 1.0, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Head
+                this.ctx.beginPath();
+                this.ctx.arc(screen.x, screen.y - radius * 0.9, radius * 0.5, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Beak
+                this.ctx.fillStyle = '#FF9800';
+                this.ctx.beginPath();
+                this.ctx.moveTo(screen.x, screen.y - radius * 0.9);
+                this.ctx.lineTo(screen.x + radius * 0.6, screen.y - radius * 0.9);
+                this.ctx.lineTo(screen.x, screen.y - radius * 0.7);
+                this.ctx.closePath();
+                this.ctx.fill();
+                // Tail feathers
+                this.ctx.fillStyle = '#1565C0';
+                this.ctx.beginPath();
+                this.ctx.moveTo(screen.x, screen.y + radius * 0.8);
+                this.ctx.lineTo(screen.x - radius * 0.4, screen.y + radius * 1.5);
+                this.ctx.lineTo(screen.x, screen.y + radius * 1.3);
+                this.ctx.lineTo(screen.x + radius * 0.4, screen.y + radius * 1.5);
+                this.ctx.closePath();
+                this.ctx.fill();
+                break;
+                
+            case 'fox':
+                // Draw fox - sleek body with pointy ears and bushy tail
+                this.ctx.fillStyle = color;
+                // Body
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x, screen.y, radius * 0.9, radius * 1.0, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Head
+                this.ctx.beginPath();
+                this.ctx.arc(screen.x, screen.y - radius * 0.8, radius * 0.6, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Pointy ears
+                this.ctx.beginPath();
+                this.ctx.moveTo(screen.x - radius * 0.5, screen.y - radius * 1.0);
+                this.ctx.lineTo(screen.x - radius * 0.7, screen.y - radius * 1.6);
+                this.ctx.lineTo(screen.x - radius * 0.2, screen.y - radius * 1.1);
+                this.ctx.closePath();
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.moveTo(screen.x + radius * 0.5, screen.y - radius * 1.0);
+                this.ctx.lineTo(screen.x + radius * 0.7, screen.y - radius * 1.6);
+                this.ctx.lineTo(screen.x + radius * 0.2, screen.y - radius * 1.1);
+                this.ctx.closePath();
+                this.ctx.fill();
+                // Snout
+                this.ctx.fillStyle = '#FFCCBC';
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x, screen.y - radius * 0.6, radius * 0.3, radius * 0.2, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Nose
+                this.ctx.fillStyle = '#1A1A1A';
+                this.ctx.beginPath();
+                this.ctx.arc(screen.x, screen.y - radius * 0.55, 3, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Bushy tail
+                const tailWag = Math.sin(Date.now() * 0.008) * 0.3;
+                this.ctx.fillStyle = color;
+                this.ctx.beginPath();
+                this.ctx.ellipse(screen.x - radius * 1.0 + tailWag * 15, screen.y + radius * 0.3, radius * 0.8, radius * 0.35, -0.5 + tailWag, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Tail tip (white)
+                this.ctx.fillStyle = '#FFCCBC';
+                this.ctx.beginPath();
+                this.ctx.arc(screen.x - radius * 1.6 + tailWag * 20, screen.y + radius * 0.1, radius * 0.25, 0, Math.PI * 2);
+                this.ctx.fill();
+                break;
+                
+            default:
+                // Fallback to circle
+                this.ctx.fillStyle = baseColor;
+                this.ctx.beginPath();
+                this.ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+                this.ctx.fill();
+        }
+    }
+    
+    renderBeeSwarm(beeSwarm) {
+        for (const bee of beeSwarm) {
+            const screen = this.worldToScreen(bee.x, bee.y);
+            
+            // Draw bee body
+            this.ctx.fillStyle = '#FFC107';
+            this.ctx.beginPath();
+            this.ctx.ellipse(screen.x, screen.y, 6, 4, 0, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // Draw stripes
+            this.ctx.fillStyle = '#1A1A1A';
+            this.ctx.beginPath();
+            this.ctx.ellipse(screen.x - 2, screen.y, 1.5, 3, 0, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.beginPath();
+            this.ctx.ellipse(screen.x + 2, screen.y, 1.5, 3, 0, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // Draw wings
+            const wingFlap = Math.sin(Date.now() * 0.05 + bee.angle * 10) * 0.5;
+            this.ctx.fillStyle = 'rgba(200, 220, 255, 0.6)';
+            this.ctx.beginPath();
+            this.ctx.ellipse(screen.x - 3, screen.y - 3, 4, 2, -0.5 + wingFlap, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.beginPath();
+            this.ctx.ellipse(screen.x + 3, screen.y - 3, 4, 2, 0.5 - wingFlap, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
     }
     
     drawClaw(x, y, size, angle) {

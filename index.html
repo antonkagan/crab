@@ -17,12 +17,38 @@
             </div>
             <div id="mutation-screen" class="screen hidden">
                 <h2>Choose Your Mutation</h2>
+                <div id="mutation-progress-panel">
+                    <h4>Super Evolution Progress</h4>
+                    <div class="mutation-progress-grid">
+                        <div class="mut-prog-item"><span>🦍</span><div class="mut-prog-bar"><div class="mut-prog-fill" id="mut-prog-gorilla"></div></div><span class="mut-prog-pct" id="mut-pct-gorilla">0%</span></div>
+                        <div class="mut-prog-item"><span>🦀</span><div class="mut-prog-bar"><div class="mut-prog-fill" id="mut-prog-crab"></div></div><span class="mut-prog-pct" id="mut-pct-crab">0%</span></div>
+                        <div class="mut-prog-item"><span>🐝</span><div class="mut-prog-bar"><div class="mut-prog-fill" id="mut-prog-bee"></div></div><span class="mut-prog-pct" id="mut-pct-bee">0%</span></div>
+                        <div class="mut-prog-item"><span>🐘</span><div class="mut-prog-bar"><div class="mut-prog-fill" id="mut-prog-elephant"></div></div><span class="mut-prog-pct" id="mut-pct-elephant">0%</span></div>
+                        <div class="mut-prog-item"><span>🐦</span><div class="mut-prog-bar"><div class="mut-prog-fill" id="mut-prog-bird"></div></div><span class="mut-prog-pct" id="mut-pct-bird">0%</span></div>
+                        <div class="mut-prog-item"><span>🦊</span><div class="mut-prog-bar"><div class="mut-prog-fill" id="mut-prog-fox"></div></div><span class="mut-prog-pct" id="mut-pct-fox">0%</span></div>
+                    </div>
+                </div>
                 <div id="mutation-options"></div>
             </div>
             <div id="game-over-screen" class="screen hidden">
                 <h2 id="game-over-title">Game Over</h2>
                 <p id="game-over-message"></p>
                 <button id="restart-button">Play Again</button>
+            </div>
+            <div id="super-evolution-screen" class="screen hidden">
+                <h2>🌟 Super Evolution! 🌟</h2>
+                <div id="super-creature-icon" class="super-icon"></div>
+                <h3 id="super-creature-name"></h3>
+                <p id="super-creature-description"></p>
+                <div id="super-ability-info">
+                    <strong id="super-ability-name"></strong>
+                    <p id="super-ability-description"></p>
+                    <p id="super-ability-key" class="key-hint"></p>
+                </div>
+                <div class="super-buttons">
+                    <button id="evolve-button">Evolve!</button>
+                    <button id="decline-button">Not Yet</button>
+                </div>
             </div>
             <div id="hud" class="hidden">
                 <div id="health-bar">
@@ -33,6 +59,22 @@
                 <div id="apple-counter">Apples: <span id="apples-count">0</span>/10</div>
                 <div id="surface-indicator">Surface: <span id="surface-type">Grass</span></div>
                 <div id="boss-tracker">Bosses Defeated: <span id="bosses-killed">0</span>/3</div>
+                <div id="evolution-progress">
+                    <div class="evo-bar" title="Gorilla"><span class="evo-emoji">🦍</span><div class="evo-fill-container"><div class="evo-fill" id="evo-gorilla"></div><span class="evo-pct" id="evo-pct-gorilla">0%</span></div><span class="evo-check" id="check-gorilla"></span></div>
+                    <div class="evo-bar" title="Crab"><span class="evo-emoji">🦀</span><div class="evo-fill-container"><div class="evo-fill" id="evo-crab"></div><span class="evo-pct" id="evo-pct-crab">0%</span></div><span class="evo-check" id="check-crab"></span></div>
+                    <div class="evo-bar" title="Bee"><span class="evo-emoji">🐝</span><div class="evo-fill-container"><div class="evo-fill" id="evo-bee"></div><span class="evo-pct" id="evo-pct-bee">0%</span></div><span class="evo-check" id="check-bee"></span></div>
+                    <div class="evo-bar" title="Elephant"><span class="evo-emoji">🐘</span><div class="evo-fill-container"><div class="evo-fill" id="evo-elephant"></div><span class="evo-pct" id="evo-pct-elephant">0%</span></div><span class="evo-check" id="check-elephant"></span></div>
+                    <div class="evo-bar" title="Bird"><span class="evo-emoji">🐦</span><div class="evo-fill-container"><div class="evo-fill" id="evo-bird"></div><span class="evo-pct" id="evo-pct-bird">0%</span></div><span class="evo-check" id="check-bird"></span></div>
+                    <div class="evo-bar" title="Fox"><span class="evo-emoji">🦊</span><div class="evo-fill-container"><div class="evo-fill" id="evo-fox"></div><span class="evo-pct" id="evo-pct-fox">0%</span></div><span class="evo-check" id="check-fox"></span></div>
+                </div>
+            </div>
+            <div id="ability-bar" class="hidden">
+                <div class="ability-slot" id="ability-gorilla" title="Ground Pound [1]"><span class="ability-icon">🦍</span><div class="ability-cd" id="cd-gorilla"></div><span class="ability-key">1</span></div>
+                <div class="ability-slot" id="ability-crab" title="Iron Shell [2]"><span class="ability-icon">🦀</span><div class="ability-cd" id="cd-crab"></div><span class="ability-key">2</span></div>
+                <div class="ability-slot" id="ability-bee" title="Swarm [3]"><span class="ability-icon">🐝</span><div class="ability-cd" id="cd-bee"></div><span class="ability-key">3</span></div>
+                <div class="ability-slot" id="ability-elephant" title="Stampede [4]"><span class="ability-icon">🐘</span><div class="ability-cd" id="cd-elephant"></div><span class="ability-key">4</span></div>
+                <div class="ability-slot" id="ability-bird" title="Flight [5]"><span class="ability-icon">🐦</span><div class="ability-cd" id="cd-bird"></div><span class="ability-key">5</span></div>
+                <div class="ability-slot" id="ability-fox" title="Vanish [6]"><span class="ability-icon">🦊</span><div class="ability-cd" id="cd-fox"></div><span class="ability-key">6</span></div>
             </div>
         </div>
     </div>

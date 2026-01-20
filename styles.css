@@ -136,6 +136,94 @@ button:active {
     font-weight: 600;
 }
 
+/* Mutation Screen Progress Panel */
+#mutation-progress-panel {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid #444;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+    min-height: 120px;
+}
+
+#mutation-progress-panel h4 {
+    color: #9b59b6;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.mutation-progress-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.mut-prog-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 5px 8px;
+    border-radius: 5px;
+    height: 32px;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.mut-prog-item > span:first-child {
+    font-size: 16px;
+}
+
+.mut-prog-bar {
+    flex: 1;
+    height: 14px;
+    background: rgba(50, 50, 50, 0.8);
+    border-radius: 7px;
+    position: relative;
+    overflow: hidden;
+}
+
+.mut-prog-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    border-radius: 7px;
+    transition: width 0.3s;
+}
+
+#mut-prog-gorilla { background: linear-gradient(90deg, #8B4513, #5D4037); }
+#mut-prog-crab { background: linear-gradient(90deg, #E53935, #C62828); }
+#mut-prog-bee { background: linear-gradient(90deg, #FFC107, #FF9800); }
+#mut-prog-elephant { background: linear-gradient(90deg, #78909C, #546E7A); }
+#mut-prog-bird { background: linear-gradient(90deg, #42A5F5, #1E88E5); }
+#mut-prog-fox { background: linear-gradient(90deg, #FF7043, #F4511E); }
+
+.mut-prog-pct {
+    font-size: 11px;
+    font-weight: bold;
+    color: #ccc;
+    width: 70px;
+    text-align: right;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.mut-prog-item.preview-highlight {
+    background: rgba(255, 165, 0, 0.3);
+    border-color: #ffa500;
+    box-shadow: 0 0 8px rgba(255, 165, 0, 0.4);
+}
+
+.mutation-option .creature-hint {
+    color: #9b59b6;
+    font-size: 13px;
+    margin: 8px 0 5px 0;
+    font-weight: 600;
+}
+
 #hud {
     position: absolute;
     top: 20px;
@@ -246,4 +334,236 @@ button:active {
 #boss-tracker span {
     font-weight: 700;
     color: #fff;
+}
+
+/* Super Evolution Screen */
+#super-evolution-screen {
+    min-width: 450px;
+}
+
+#super-evolution-screen h2 {
+    color: #9b59b6;
+    font-size: 28px;
+}
+
+.super-icon {
+    font-size: 80px;
+    margin: 20px 0;
+}
+
+#super-creature-name {
+    color: #fff;
+    font-size: 26px;
+    margin-bottom: 10px;
+}
+
+#super-creature-description {
+    color: #ccc;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+#super-ability-info {
+    background: rgba(155, 89, 182, 0.2);
+    border: 1px solid #9b59b6;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+#super-ability-name {
+    color: #9b59b6;
+    font-size: 18px;
+}
+
+#super-ability-description {
+    color: #ccc;
+    font-size: 14px;
+    margin: 10px 0 5px 0;
+}
+
+.key-hint {
+    color: #ffa500 !important;
+    font-weight: 600;
+    font-size: 14px !important;
+    margin: 0 !important;
+}
+
+.super-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+#evolve-button {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+}
+
+#evolve-button:hover {
+    box-shadow: 0 5px 20px rgba(155, 89, 182, 0.5);
+}
+
+#decline-button {
+    background: rgba(100, 100, 100, 0.5);
+}
+
+#decline-button:hover {
+    background: rgba(150, 150, 150, 0.5);
+    box-shadow: none;
+}
+
+/* Evolution Progress Bars */
+#evolution-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 15px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.evo-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 20px;
+}
+
+.evo-emoji {
+    font-size: 14px;
+    width: 20px;
+}
+
+.evo-fill-container {
+    flex: 1;
+    height: 12px;
+    background: rgba(50, 50, 50, 0.8);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+}
+
+.evo-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    border-radius: 6px;
+    transition: width 0.3s;
+}
+
+.evo-pct {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 9px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    z-index: 1;
+}
+
+#evo-gorilla { background: linear-gradient(90deg, #8B4513, #5D4037); }
+#evo-crab { background: linear-gradient(90deg, #E53935, #C62828); }
+#evo-bee { background: linear-gradient(90deg, #FFC107, #FF9800); }
+#evo-elephant { background: linear-gradient(90deg, #78909C, #546E7A); }
+#evo-bird { background: linear-gradient(90deg, #42A5F5, #1E88E5); }
+#evo-fox { background: linear-gradient(90deg, #FF7043, #F4511E); }
+
+.evo-check {
+    width: 18px;
+    font-size: 12px;
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.evo-bar.evolution-ready .evo-fill {
+    animation: glow-pulse 1s infinite;
+}
+
+@keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 5px #9b59b6; }
+    50% { box-shadow: 0 0 15px #9b59b6, 0 0 25px #8e44ad; }
+}
+
+/* Ability Bar */
+#ability-bar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 10px 15px;
+    border-radius: 15px;
+    border: 2px solid #333;
+    pointer-events: all;
+}
+
+#ability-bar.hidden {
+    display: none;
+}
+
+.ability-slot {
+    width: 50px;
+    height: 50px;
+    background: rgba(50, 50, 50, 0.8);
+    border: 2px solid #555;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    opacity: 0.4;
+    transition: all 0.2s;
+}
+
+.ability-slot.unlocked {
+    opacity: 1;
+    border-color: #777;
+}
+
+.ability-slot.unlocked.ready {
+    border-color: #9b59b6;
+    box-shadow: 0 0 10px rgba(155, 89, 182, 0.5);
+}
+
+.ability-slot.unlocked.ready:hover {
+    transform: scale(1.1);
+    cursor: pointer;
+}
+
+.ability-icon {
+    font-size: 24px;
+}
+
+.ability-cd {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0%;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 0 0 8px 8px;
+    font-size: 10px;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding-bottom: 2px;
+    transition: height 0.1s;
+}
+
+.ability-key {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 10px;
+    color: #888;
+    font-weight: bold;
 }

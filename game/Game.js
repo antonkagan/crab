@@ -74,10 +74,36 @@ export default class Game {
         
         window.addEventListener('keydown', (e) => {
             this.keys[e.key.toLowerCase()] = true;
+            
+            // Prevent arrow keys from scrolling the page
+            if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase())) {
+                e.preventDefault();
+            }
+            
+            // Super evolution ability keys (1-6)
+            if (this.state === 'playing' && this.player) {
+                const creatures = ['gorilla', 'crab', 'bee', 'elephant', 'bird', 'fox'];
+                if (e.key >= '1' && e.key <= '6') {
+                    const creature = creatures[parseInt(e.key) - 1];
+                    this.activateAbility(creature);
+                }
+            }
         });
         
         window.addEventListener('keyup', (e) => {
             this.keys[e.key.toLowerCase()] = false;
+        });
+        
+        // Reset all keys when window loses focus (prevents stuck keys)
+        window.addEventListener('blur', () => {
+            this.keys = {};
+        });
+        
+        // Also reset keys when tab becomes hidden
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.keys = {};
+            }
         });
         
         // Mouse click to attack
@@ -148,13 +174,23 @@ export default class Game {
             }
         };
         
+        // Calculate damage (with Vanish boost if active)
+        let attackDamage = this.player.attack;
+        if (this.player.activeAbilities.vanishDamageBoost) {
+            const multiplier = this.player.activeAbilities.vanishDamageMultiplier || 3.0;
+            attackDamage *= multiplier;
+            this.player.activeAbilities.vanishDamageBoost = false;
+            this.player.activeAbilities.vanish = false; // End vanish on attack
+            this.createParticles(this.player.x, this.player.y, '#FF8C00');
+        }
+        
         // Check for enemies in attack range
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
             
             if (isEntityHit(enemy)) {
                 // Deal damage to enemy
-                enemy.takeDamage(this.player.attack);
+                enemy.takeDamage(attackDamage);
                 
                 if (enemy.health <= 0) {
                     this.evolutionPoints += enemy.points;
@@ -177,7 +213,7 @@ export default class Game {
             const boss = this.bosses[i];
             
             if (isEntityHit(boss)) {
-                boss.takeDamage(this.player.attack);
+                boss.takeDamage(attackDamage);
                 
                 // Golden Crusher spike damage - only hurts player when spikes ability is active
                 if (boss.spikesActive) {
@@ -266,6 +302,335 @@ export default class Game {
                     color: '#ffff00',
                     size: Math.random() * 3 + 2
                 });
+            }
+        }
+    }
+    
+    // Super Evolution Ability System
+    activateAbility(creature) {
+        if (!this.player || !this.player.canUseAbility(creature)) {
+            return;
+        }
+        
+        switch (creature) {
+            case 'gorilla':
+                this.activateGroundPound();
+                break;
+            case 'crab':
+                this.activateIronShell();
+                break;
+            case 'bee':
+                this.activateSwarm();
+                break;
+            case 'elephant':
+                this.activateStampede();
+                break;
+            case 'bird':
+                this.activateFlight();
+                break;
+            case 'fox':
+                this.activateVanish();
+                break;
+        }
+        
+        this.player.useAbility(creature);
+    }
+    
+    // Gorilla: Ground Pound - AOE slam dealing 5x damage
+    activateGroundPound() {
+        const radius = 250;
+        const damage = this.player.attack * 5;
+        
+        this.createGroundPoundEffect();
+        
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const enemy = this.enemies[i];
+            const dx = enemy.x - this.player.x;
+            const dy = enemy.y - this.player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < radius + enemy.radius) {
+                enemy.takeDamage(damage);
+                this.createParticles(enemy.x, enemy.y, '#8B4513');
+                
+                if (enemy.health <= 0) {
+                    this.evolutionPoints += enemy.points;
+                    this.enemies.splice(i, 1);
+                }
+            }
+        }
+        
+        for (const boss of this.bosses) {
+            const dx = boss.x - this.player.x;
+            const dy = boss.y - this.player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < radius + boss.radius) {
+                boss.takeDamage(damage);
+                this.createParticles(boss.x, boss.y, '#8B4513');
+            }
+        }
+    }
+    
+    createGroundPoundEffect() {
+        for (let i = 0; i < 30; i++) {
+            const angle = (Math.PI * 2 * i) / 30;
+            this.particles.push({
+                x: this.player.x,
+                y: this.player.y,
+                vx: Math.cos(angle) * 200,
+                vy: Math.sin(angle) * 200,
+                life: 1.0,
+                decay: 0.025,
+                color: '#8B4513',
+                size: 8
+            });
+        }
+    }
+    
+    // Crab: Iron Shell - Invincible for 4 seconds
+    activateIronShell() {
+        this.player.activeAbilities.ironShell = true;
+        this.player.activeAbilities.ironShellTimer = 4000;
+        
+        for (let i = 0; i < 20; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            this.particles.push({
+                x: this.player.x + Math.cos(angle) * 30,
+                y: this.player.y + Math.sin(angle) * 30,
+                vx: Math.cos(angle) * 50,
+                vy: Math.sin(angle) * 50,
+                life: 1.5,
+                decay: 0.02,
+                color: '#ff6b6b',
+                size: 5
+            });
+        }
+    }
+    
+    // Bee: Swarm - Summon 10 mini-bees that attack enemies for 8s
+    activateSwarm() {
+        for (let i = 0; i < 10; i++) {
+            const angle = (Math.PI * 2 * i) / 10;
+            this.player.beeSwarm.push({
+                x: this.player.x + Math.cos(angle) * 40,
+                y: this.player.y + Math.sin(angle) * 40,
+                timer: 8000,
+                angle: angle,
+                targetEnemy: null,
+                damage: this.player.attack * 0.1
+            });
+        }
+        
+        for (let i = 0; i < 15; i++) {
+            this.particles.push({
+                x: this.player.x + (Math.random() - 0.5) * 60,
+                y: this.player.y + (Math.random() - 0.5) * 60,
+                vx: (Math.random() - 0.5) * 100,
+                vy: (Math.random() - 0.5) * 100,
+                life: 1.0,
+                decay: 0.03,
+                color: '#FFD700',
+                size: 3
+            });
+        }
+    }
+    
+    // Elephant: Stampede - Charge forward, knockback + damage
+    activateStampede() {
+        this.player.activeAbilities.stampede = true;
+        this.player.activeAbilities.stampedeTimer = 2000;
+        this.player.activeAbilities.stampedeDirection = {
+            x: this.player.facingX,
+            y: this.player.facingY
+        };
+        this.player.activeAbilities.stampedeDamage = this.player.attack * 4;
+        
+        for (let i = 0; i < 20; i++) {
+            this.particles.push({
+                x: this.player.x - this.player.facingX * 30,
+                y: this.player.y - this.player.facingY * 30,
+                vx: -this.player.facingX * 100 + (Math.random() - 0.5) * 80,
+                vy: -this.player.facingY * 100 + (Math.random() - 0.5) * 80,
+                life: 1.0,
+                decay: 0.02,
+                color: '#A0A0A0',
+                size: 6
+            });
+        }
+    }
+    
+    // Bird: Flight - Untargetable + 3x speed for 5s
+    activateFlight() {
+        this.player.activeAbilities.flight = true;
+        this.player.activeAbilities.flightTimer = 5000;
+        this.player.activeAbilities.flightSpeedBoost = 3.0;
+        
+        for (let i = 0; i < 15; i++) {
+            this.particles.push({
+                x: this.player.x + (Math.random() - 0.5) * 40,
+                y: this.player.y + (Math.random() - 0.5) * 40,
+                vx: (Math.random() - 0.5) * 60,
+                vy: Math.random() * 50 + 20,
+                life: 1.5,
+                decay: 0.015,
+                color: '#FFFFFF',
+                size: 4
+            });
+        }
+    }
+    
+    // Fox: Vanish - Invisible for 6s, next attack deals 3x damage
+    activateVanish() {
+        this.player.activeAbilities.vanish = true;
+        this.player.activeAbilities.vanishTimer = 6000;
+        this.player.activeAbilities.vanishDamageBoost = true;
+        this.player.activeAbilities.vanishDamageMultiplier = 3.0;
+        
+        for (let i = 0; i < 20; i++) {
+            this.particles.push({
+                x: this.player.x + (Math.random() - 0.5) * 40,
+                y: this.player.y + (Math.random() - 0.5) * 40,
+                vx: (Math.random() - 0.5) * 100,
+                vy: (Math.random() - 0.5) * 100,
+                life: 1.0,
+                decay: 0.025,
+                color: '#FF8C00',
+                size: 5
+            });
+        }
+    }
+    
+    handleStampedeDamage() {
+        const damage = this.player.activeAbilities.stampedeDamage || (this.player.attack * 4);
+        const knockbackForce = 350;
+        
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const enemy = this.enemies[i];
+            const dx = enemy.x - this.player.x;
+            const dy = enemy.y - this.player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < this.player.radius + enemy.radius + 20) {
+                enemy.takeDamage(damage);
+                
+                if (distance > 0) {
+                    enemy.x += (dx / distance) * knockbackForce * (this.deltaTime / 1000);
+                    enemy.y += (dy / distance) * knockbackForce * (this.deltaTime / 1000);
+                }
+                
+                this.createParticles(enemy.x, enemy.y, '#A0A0A0');
+                
+                if (enemy.health <= 0) {
+                    this.evolutionPoints += enemy.points;
+                    this.enemies.splice(i, 1);
+                }
+            }
+        }
+        
+        for (const boss of this.bosses) {
+            const dx = boss.x - this.player.x;
+            const dy = boss.y - this.player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < this.player.radius + boss.radius + 20) {
+                boss.takeDamage(damage);
+                this.createParticles(boss.x, boss.y, '#A0A0A0');
+            }
+        }
+    }
+    
+    updateBeeSwarm() {
+        if (!this.player.beeSwarm || this.player.beeSwarm.length === 0) return;
+        
+        const beeSpeed = 400;
+        
+        for (const bee of this.player.beeSwarm) {
+            let nearestEnemy = null;
+            let nearestDist = Infinity;
+            let isEnemy = false; // Track if target is regular enemy or boss
+            
+            for (const enemy of this.enemies) {
+                const dx = enemy.x - bee.x;
+                const dy = enemy.y - bee.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearestEnemy = enemy;
+                    isEnemy = true;
+                }
+            }
+            
+            for (const boss of this.bosses) {
+                const dx = boss.x - bee.x;
+                const dy = boss.y - bee.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearestEnemy = boss;
+                    isEnemy = false;
+                }
+            }
+            
+            if (nearestEnemy) {
+                const dx = nearestEnemy.x - bee.x;
+                const dy = nearestEnemy.y - bee.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist > 0) {
+                    bee.x += (dx / dist) * beeSpeed * (this.deltaTime / 1000);
+                    bee.y += (dy / dist) * beeSpeed * (this.deltaTime / 1000);
+                }
+                
+                if (dist < 25) {
+                    const beeDamage = bee.damage || (this.player.attack * 0.1);
+                    nearestEnemy.takeDamage(beeDamage * (this.deltaTime / 1000));
+                    
+                    if (Math.random() < 0.15) {
+                        this.createParticles(bee.x, bee.y, '#FFD700');
+                    }
+                    
+                    // Check if enemy died
+                    if (nearestEnemy.health <= 0) {
+                        if (isEnemy) {
+                            // Remove from enemies array
+                            const enemyIndex = this.enemies.indexOf(nearestEnemy);
+                            if (enemyIndex > -1) {
+                                this.evolutionPoints += nearestEnemy.points;
+                                this.createParticles(nearestEnemy.x, nearestEnemy.y, nearestEnemy.color);
+                                this.enemies.splice(enemyIndex, 1);
+                                this.checkBossSpawn();
+                            }
+                        } else {
+                            // It's a boss
+                            const bossIndex = this.bosses.indexOf(nearestEnemy);
+                            if (bossIndex > -1) {
+                                this.evolutionPoints += nearestEnemy.points;
+                                this.bossesKilled++;
+                                
+                                // Lift curse if Crimson Overlord is killed
+                                if (nearestEnemy.hasCurse) {
+                                    this.isCursed = false;
+                                    this.curseTimer = 0;
+                                }
+                                
+                                for (let j = 0; j < 5; j++) {
+                                    this.createParticles(nearestEnemy.x, nearestEnemy.y, nearestEnemy.color);
+                                }
+                                this.bosses.splice(bossIndex, 1);
+                                
+                                if (this.bossesKilled >= 3) {
+                                    this.victory();
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                bee.angle += this.deltaTime * 0.003;
+                bee.x = this.player.x + Math.cos(bee.angle) * 50;
+                bee.y = this.player.y + Math.sin(bee.angle) * 50;
             }
         }
     }
@@ -454,17 +819,37 @@ export default class Game {
         const playerSurface = this.surface.getSurfaceAt(this.player.x, this.player.y);
         const speedModifier = this.surface.getSpeedModifier(playerSurface);
         
+        // Update player ability cooldowns
+        this.player.updateAbilityCooldowns(this.deltaTime);
+        
         // Update player with surface speed modifier
-        const moveX = (this.keys['a'] || this.keys['arrowleft'] ? -1 : 0) + 
+        let moveX = (this.keys['a'] || this.keys['arrowleft'] ? -1 : 0) + 
                      (this.keys['d'] || this.keys['arrowright'] ? 1 : 0);
-        const moveY = (this.keys['w'] || this.keys['arrowup'] ? -1 : 0) + 
+        let moveY = (this.keys['w'] || this.keys['arrowup'] ? -1 : 0) + 
                      (this.keys['s'] || this.keys['arrowdown'] ? 1 : 0);
+        
+        // Bird Flight: 3x speed
+        let playerSpeedModifier = speedModifier;
+        if (this.player.activeAbilities.flight) {
+            playerSpeedModifier *= (this.player.activeAbilities.flightSpeedBoost || 3.0);
+        }
+        
+        // Elephant Stampede: Override movement
+        if (this.player.activeAbilities.stampede) {
+            moveX = this.player.activeAbilities.stampedeDirection.x;
+            moveY = this.player.activeAbilities.stampedeDirection.y;
+            playerSpeedModifier *= 3;
+            this.handleStampedeDamage();
+        }
         
         // Store old position for collision checking
         const oldPlayerX = this.player.x;
         const oldPlayerY = this.player.y;
         
-        this.player.update(moveX, moveY, this.deltaTime, this.worldWidth, this.worldHeight, speedModifier);
+        this.player.update(moveX, moveY, this.deltaTime, this.worldWidth, this.worldHeight, playerSpeedModifier);
+        
+        // Update bee swarm
+        this.updateBeeSwarm();
         
         // Check tree collision for player
         for (const tree of this.trees) {
@@ -596,6 +981,11 @@ export default class Game {
             if (enemy.behavior === 'attack') {
                 // Attacking enemies damage player on collision (but player doesn't auto-attack back)
                 if (Combat.checkCollision(this.player, enemy)) {
+                    // Iron Shell: invincible, Flight: untargetable
+                    if (this.player.activeAbilities.ironShell || this.player.activeAbilities.flight) {
+                        continue; // Skip damage
+                    }
+                    
                     const currentTime = performance.now();
                     // Check enemy attack cooldown
                     if (enemy.canAttack(currentTime)) {
@@ -650,12 +1040,15 @@ export default class Game {
             
             // Boss combat - bosses always attack on collision
             if (Combat.checkCollision(this.player, boss)) {
-                const currentTime = performance.now();
-                if (boss.canAttack(currentTime)) {
-                    boss.recordAttack(currentTime);
-                    this.player.takeDamage(boss.attack);
-                    if (this.player.health <= 0) {
-                        this.gameOver(`You were crushed by ${boss.name}!`);
+                // Iron Shell: invincible, Flight: untargetable
+                if (!this.player.activeAbilities.ironShell && !this.player.activeAbilities.flight) {
+                    const currentTime = performance.now();
+                    if (boss.canAttack(currentTime)) {
+                        boss.recordAttack(currentTime);
+                        this.player.takeDamage(boss.attack);
+                        if (this.player.health <= 0) {
+                            this.gameOver(`You were crushed by ${boss.name}!`);
+                        }
                     }
                 }
             }
@@ -776,8 +1169,77 @@ export default class Game {
         const optionsDiv = document.getElementById('mutation-options');
         mutationScreen.classList.remove('hidden');
         
+        // Update mutation screen progress bars
+        const creatures = ['gorilla', 'crab', 'bee', 'elephant', 'bird', 'fox'];
+        for (const creature of creatures) {
+            const progress = this.player.evolutionProgress[creature] || 0;
+            const evolved = this.player.superEvolutions[creature];
+            
+            const fillEl = document.getElementById(`mut-prog-${creature}`);
+            const pctEl = document.getElementById(`mut-pct-${creature}`);
+            
+            if (fillEl) {
+                fillEl.style.width = `${Math.min(progress, 100)}%`;
+            }
+            
+            if (pctEl) {
+                if (evolved) {
+                    pctEl.textContent = '✓';
+                    pctEl.style.color = '#4CAF50';
+                } else {
+                    pctEl.textContent = `${Math.floor(progress)}%`;
+                    pctEl.style.color = progress >= 100 ? '#4CAF50' : '#ccc';
+                }
+            }
+        }
+        
         const options = this.mutation.getRandomOptions(3, this.player);
         optionsDiv.innerHTML = '';
+        
+        // Helper function to update mutation screen progress bars
+        const updateMutationProgressBars = (previewCreatureTypes = null) => {
+            for (const creature of creatures) {
+                const currentProgress = this.player.evolutionProgress[creature] || 0;
+                const evolved = this.player.superEvolutions[creature];
+                
+                // Calculate preview progress if hovering
+                let displayProgress = currentProgress;
+                let isPreview = false;
+                if (previewCreatureTypes && previewCreatureTypes.includes(creature)) {
+                    displayProgress = Math.min(currentProgress + 10, 100);
+                    isPreview = true;
+                }
+                
+                const fillEl = document.getElementById(`mut-prog-${creature}`);
+                const pctEl = document.getElementById(`mut-pct-${creature}`);
+                const itemEl = fillEl ? fillEl.closest('.mut-prog-item') : null;
+                
+                if (fillEl) {
+                    fillEl.style.width = `${Math.min(displayProgress, 100)}%`;
+                }
+                
+                if (pctEl) {
+                    if (evolved) {
+                        pctEl.textContent = '✓';
+                        pctEl.style.color = '#4CAF50';
+                    } else if (isPreview) {
+                        pctEl.textContent = `${Math.floor(currentProgress)}% → ${Math.floor(displayProgress)}%`;
+                        pctEl.style.color = '#ffa500';
+                    } else {
+                        pctEl.textContent = `${Math.floor(currentProgress)}%`;
+                        pctEl.style.color = currentProgress >= 100 ? '#4CAF50' : '#ccc';
+                    }
+                }
+                
+                if (itemEl) {
+                    if (isPreview) {
+                        itemEl.classList.add('preview-highlight');
+                    } else {
+                        itemEl.classList.remove('preview-highlight');
+                    }
+                }
+            }
+        };
         
         options.forEach((option, index) => {
             const div = document.createElement('div');
@@ -805,12 +1267,33 @@ export default class Game {
             const scaledSpeed = option.speed ? Math.floor(option.speed * levelMultiplier) : 0;
             const scaledAttack = option.attack ? Math.floor(option.attack * levelMultiplier) : 0;
             
+            // Show which creature types this mutation contributes to
+            const creatureEmojis = {
+                gorilla: '🦍', crab: '🦀', bee: '🐝', elephant: '🐘', bird: '🐦', fox: '🦊'
+            };
+            let creatureHint = '';
+            if (option.creatureTypes && option.creatureTypes.length > 0) {
+                const emojis = option.creatureTypes.map(c => creatureEmojis[c]).join(' ');
+                creatureHint = `<p class="creature-hint">Evolution: ${emojis} +10%</p>`;
+            }
+            
             div.innerHTML = `
                 <h3>${displayName} ${nextLevel > 1 ? `Lv.${nextLevel}` : ''}</h3>
                 <p>${displayDesc}</p>
                 <p>Health: +${scaledHealth} | Speed: +${scaledSpeed} | Attack: +${scaledAttack}</p>
+                ${creatureHint}
                 ${option.crabRisk ? `<p class="crab-risk">⚠️ Crab Risk: +${option.crabRisk}%</p>` : ''}
             `;
+            
+            // Hover events to preview evolution progress
+            div.addEventListener('mouseenter', () => {
+                updateMutationProgressBars(option.creatureTypes || []);
+            });
+            
+            div.addEventListener('mouseleave', () => {
+                updateMutationProgressBars(null);
+            });
+            
             div.addEventListener('click', () => {
                 this.selectMutation(option);
             });
@@ -823,8 +1306,132 @@ export default class Game {
         this.mutation.applyMutation(mutation);
         
         document.getElementById('mutation-screen').classList.add('hidden');
-        this.state = 'playing';
-        this.gameLoop(performance.now());
+        
+        // Check if any super evolution is ready
+        const readyEvolutions = this.player.getReadySuperEvolutions();
+        if (readyEvolutions.length > 0) {
+            this.showSuperEvolutionScreen(readyEvolutions[0]);
+        } else {
+            this.state = 'playing';
+            this.gameLoop(performance.now());
+        }
+    }
+    
+    showSuperEvolutionScreen(creature) {
+        this.state = 'superEvolution';
+        this.pendingSuperEvolution = creature;
+        
+        const superEvolutionData = {
+            gorilla: {
+                emoji: '🦍',
+                name: 'Super Gorilla',
+                description: 'You have become a mighty gorilla! Raw strength courses through your veins.',
+                abilityName: 'Ground Pound',
+                abilityDesc: 'Slam the ground dealing 5x damage to all nearby enemies.',
+                key: '1'
+            },
+            crab: {
+                emoji: '🦀',
+                name: 'Super Crab',
+                description: 'Your shell has hardened to perfection! Nothing can harm you now.',
+                abilityName: 'Iron Shell',
+                abilityDesc: 'Become invincible for 4 seconds.',
+                key: '2'
+            },
+            bee: {
+                emoji: '🐝',
+                name: 'Super Bee',
+                description: 'The hive mind awakens! Command your swarm to attack.',
+                abilityName: 'Swarm',
+                abilityDesc: 'Summon 10 bees that attack enemies for 8 seconds.',
+                key: '3'
+            },
+            elephant: {
+                emoji: '🐘',
+                name: 'Super Elephant',
+                description: 'Unstoppable force! Charge through anything in your path.',
+                abilityName: 'Stampede',
+                abilityDesc: 'Charge forward dealing 4x damage and knocking back enemies.',
+                key: '4'
+            },
+            bird: {
+                emoji: '🐦',
+                name: 'Super Bird',
+                description: 'Take to the skies! Enemies cannot reach you up there.',
+                abilityName: 'Flight',
+                abilityDesc: 'Fly for 5 seconds - untargetable and 3x speed.',
+                key: '5'
+            },
+            fox: {
+                emoji: '🦊',
+                name: 'Super Fox',
+                description: 'Master of stealth! Strike from the shadows.',
+                abilityName: 'Vanish',
+                abilityDesc: 'Turn invisible for 6 seconds. Next attack deals 3x damage.',
+                key: '6'
+            }
+        };
+        
+        const data = superEvolutionData[creature];
+        
+        document.getElementById('super-creature-icon').textContent = data.emoji;
+        document.getElementById('super-creature-name').textContent = data.name;
+        document.getElementById('super-creature-description').textContent = data.description;
+        document.getElementById('super-ability-name').textContent = data.abilityName;
+        document.getElementById('super-ability-description').textContent = data.abilityDesc;
+        document.getElementById('super-ability-key').textContent = `Press [${data.key}] to activate`;
+        
+        document.getElementById('super-evolution-screen').classList.remove('hidden');
+        
+        document.getElementById('evolve-button').onclick = () => this.confirmSuperEvolution();
+        document.getElementById('decline-button').onclick = () => this.declineSuperEvolution();
+    }
+    
+    confirmSuperEvolution() {
+        if (this.pendingSuperEvolution) {
+            this.player.activateSuperEvolution(this.pendingSuperEvolution);
+            
+            // Check for carcinization (all 6 super evolutions)
+            if (this.player.hasAllSuperEvolutions()) {
+                document.getElementById('super-evolution-screen').classList.add('hidden');
+                this.carcinizationEnding();
+                return;
+            }
+        }
+        
+        document.getElementById('super-evolution-screen').classList.add('hidden');
+        document.getElementById('ability-bar').classList.remove('hidden');
+        
+        const readyEvolutions = this.player.getReadySuperEvolutions();
+        if (readyEvolutions.length > 0) {
+            this.showSuperEvolutionScreen(readyEvolutions[0]);
+        } else {
+            this.state = 'playing';
+            this.gameLoop(performance.now());
+        }
+    }
+    
+    declineSuperEvolution() {
+        document.getElementById('super-evolution-screen').classList.add('hidden');
+        
+        const readyEvolutions = this.player.getReadySuperEvolutions();
+        if (readyEvolutions.length > 0) {
+            this.showSuperEvolutionScreen(readyEvolutions[0]);
+        } else {
+            this.state = 'playing';
+            this.gameLoop(performance.now());
+        }
+    }
+    
+    carcinizationEnding() {
+        this.state = 'gameOver';
+        document.getElementById('game-over-title').textContent = '🦀 CARCINIZATION 🦀';
+        document.getElementById('game-over-message').textContent = 
+            'You have achieved ultimate evolution! All creatures eventually evolve into crabs. ' +
+            'You have become the ULTIMATE CRAB and transcended this mortal plane.';
+        document.getElementById('game-over-screen').classList.remove('hidden');
+        document.getElementById('hud').classList.add('hidden');
+        document.getElementById('ability-bar').classList.add('hidden');
     }
     
     gameOver(message) {
@@ -874,6 +1481,82 @@ export default class Game {
             const surfaceTypeElement = document.getElementById('surface-type');
             surfaceTypeElement.textContent = playerSurface.charAt(0).toUpperCase() + playerSurface.slice(1);
             surfaceTypeElement.className = playerSurface;
+            
+            // Update evolution progress bars
+            const creatures = ['gorilla', 'crab', 'bee', 'elephant', 'bird', 'fox'];
+            for (const creature of creatures) {
+                const progress = this.player.evolutionProgress[creature] || 0;
+                const evolved = this.player.superEvolutions[creature];
+                
+                const fillEl = document.getElementById(`evo-${creature}`);
+                const pctEl = document.getElementById(`evo-pct-${creature}`);
+                const checkEl = document.getElementById(`check-${creature}`);
+                const barEl = fillEl ? fillEl.parentElement : null;
+                
+                if (fillEl) {
+                    fillEl.style.width = `${Math.min(progress, 100)}%`;
+                }
+                
+                if (pctEl) {
+                    if (evolved) {
+                        pctEl.textContent = '✓';
+                        pctEl.style.color = '#4CAF50';
+                    } else {
+                        pctEl.textContent = `${Math.floor(progress)}%`;
+                        pctEl.style.color = progress >= 100 ? '#4CAF50' : '#fff';
+                    }
+                }
+                
+                if (barEl) {
+                    if (progress >= 100 && !evolved) {
+                        barEl.classList.add('evolution-ready');
+                    } else {
+                        barEl.classList.remove('evolution-ready');
+                    }
+                }
+                
+                if (checkEl) {
+                    checkEl.textContent = evolved ? '✓' : '';
+                }
+            }
+            
+            // Update ability bar
+            for (const creature of creatures) {
+                const slotEl = document.getElementById(`ability-${creature}`);
+                const cdEl = document.getElementById(`cd-${creature}`);
+                const evolved = this.player.superEvolutions[creature];
+                const cooldown = this.player.abilityCooldowns[creature];
+                const maxCooldown = this.player.abilityMaxCooldowns[creature];
+                
+                if (slotEl) {
+                    if (evolved) {
+                        slotEl.classList.add('unlocked');
+                        if (cooldown <= 0) {
+                            slotEl.classList.add('ready');
+                        } else {
+                            slotEl.classList.remove('ready');
+                        }
+                    } else {
+                        slotEl.classList.remove('unlocked', 'ready');
+                    }
+                }
+                
+                if (cdEl) {
+                    if (evolved && cooldown > 0) {
+                        cdEl.textContent = Math.ceil(cooldown / 1000) + 's';
+                        cdEl.style.height = `${(cooldown / maxCooldown) * 100}%`;
+                    } else {
+                        cdEl.textContent = '';
+                        cdEl.style.height = '0%';
+                    }
+                }
+            }
+            
+            // Show ability bar if any super evolution is unlocked
+            const hasAnySuperEvolution = Object.values(this.player.superEvolutions).some(v => v);
+            if (hasAnySuperEvolution) {
+                document.getElementById('ability-bar').classList.remove('hidden');
+            }
         }
     }
     
