@@ -71,9 +71,9 @@ export default class Mutation {
             },
             {
                 name: 'Regeneration',
-                description: 'Heal faster and gain more health.',
-                health: 50,
-                attack: 2,
+                description: 'Heal over time. Higher levels heal more HP per second.',
+                health: 20,
+                regeneration: 2, // HP per second base
                 creatureTypes: ['elephant']
             },
             {

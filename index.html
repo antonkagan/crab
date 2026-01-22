@@ -13,7 +13,22 @@
             <div id="start-screen" class="screen">
                 <h1>Everything is Crab</h1>
                 <p>Evolve, fight, survive. But beware... everything evolves into a crab!</p>
-                <button id="start-button">Start Game</button>
+                <div class="start-buttons">
+                    <button id="start-button">Start Game</button>
+                    <button id="tutorial-button" class="secondary-button">Tutorial</button>
+                </div>
+            </div>
+            <div id="tutorial-overlay" class="hidden">
+                <div id="tutorial-box">
+                    <div id="tutorial-step-indicator"></div>
+                    <h3 id="tutorial-title"></h3>
+                    <p id="tutorial-text"></p>
+                    <div id="tutorial-highlight"></div>
+                    <div class="tutorial-buttons">
+                        <button id="tutorial-skip">Skip Tutorial</button>
+                        <button id="tutorial-next">Next</button>
+                    </div>
+                </div>
             </div>
             <div id="mutation-screen" class="screen hidden">
                 <h2>Choose Your Mutation</h2>

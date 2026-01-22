@@ -66,6 +66,9 @@ export default class Player {
         // Current creature form (when super evolved)
         this.currentCreatureForm = null;
         
+        // Regeneration (HP per second)
+        this.regeneration = 0;
+        
         this.color = '#4ecdc4';
         
         // Facing direction (default: right)
@@ -136,6 +139,11 @@ export default class Player {
         
         if (mutation.attack) {
             this.attack += Math.floor(mutation.attack * levelMultiplier);
+        }
+        
+        // Apply regeneration (stacks with level)
+        if (mutation.regeneration) {
+            this.regeneration += mutation.regeneration * levelMultiplier;
         }
         
         // Increase crab risk

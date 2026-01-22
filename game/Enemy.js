@@ -2,28 +2,55 @@ export default class Enemy {
     constructor(x, y, behavior = 'attack') {
         this.x = x;
         this.y = y;
-        this.radius = 15 + Math.random() * 10;
-        this.health = 20 + Math.random() * 30;
-        this.maxHealth = this.health;
-        this.speed = 50 + Math.random() * 50;
-        this.attack = 5 + Math.random() * 5;
-        this.points = Math.floor(this.maxHealth / 10);
         this.behavior = behavior; // 'attack' or 'flee'
         
-        // Different colors based on behavior
-        if (behavior === 'attack') {
-            // Aggressive crabs are red/orange
-            const attackColors = ['#ff6b6b', '#ff8c42', '#ff4757', '#ff6348'];
-            this.color = attackColors[Math.floor(Math.random() * attackColors.length)];
+        // Assign crab type based on behavior
+        if (behavior === 'flee') {
+            // Fleeing crabs are Hermit Crabs (small, with shell)
+            this.crabType = 'hermit';
+            this.radius = 12 + Math.random() * 5;
+            this.health = 15 + Math.random() * 15;
+            this.speed = 70 + Math.random() * 40; // Faster (fleeing)
+            this.attack = 3 + Math.random() * 3;
+            // Blue/cyan shell colors
+            const hermitColors = ['#4ecdc4', '#95e1d3', '#74b9ff', '#81ecec'];
+            this.color = hermitColors[Math.floor(Math.random() * hermitColors.length)];
+            this.shellColor = '#8B7355'; // Brown shell
         } else {
-            // Fleeing crabs are blue/cyan
-            const fleeColors = ['#4ecdc4', '#95e1d3', '#74b9ff', '#a29bfe'];
-            this.color = fleeColors[Math.floor(Math.random() * fleeColors.length)];
+            // Attacking crabs are either Fiddler or King Crabs
+            if (Math.random() < 0.7) {
+                // 70% chance: Fiddler Crab (one big claw)
+                this.crabType = 'fiddler';
+                this.radius = 15 + Math.random() * 8;
+                this.health = 25 + Math.random() * 25;
+                this.speed = 55 + Math.random() * 35;
+                this.attack = 8 + Math.random() * 7;
+                // Red/orange colors
+                const fiddlerColors = ['#ff6b6b', '#ff8c42', '#e74c3c', '#ff6348'];
+                this.color = fiddlerColors[Math.floor(Math.random() * fiddlerColors.length)];
+                this.bigClawSide = Math.random() < 0.5 ? 'left' : 'right';
+            } else {
+                // 30% chance: King Crab (large, spiky)
+                this.crabType = 'king';
+                this.radius = 20 + Math.random() * 10;
+                this.health = 40 + Math.random() * 40;
+                this.speed = 40 + Math.random() * 30; // Slower but tankier
+                this.attack = 12 + Math.random() * 8;
+                // Dark red/crimson colors
+                const kingColors = ['#c0392b', '#922B21', '#7B241C', '#943126'];
+                this.color = kingColors[Math.floor(Math.random() * kingColors.length)];
+            }
         }
+        
+        this.maxHealth = this.health;
+        this.points = Math.floor(this.maxHealth / 10);
         
         // Attack cooldown
         this.attackCooldown = 1000; // milliseconds between attacks
         this.lastAttackTime = 0;
+        
+        // Animation phase (for leg movement)
+        this.animPhase = Math.random() * Math.PI * 2;
     }
     
     canAttack(currentTime) {
@@ -35,6 +62,9 @@ export default class Enemy {
     }
     
     update(player, deltaTime, speedModifier = 1.0, worldWidth = null, worldHeight = null, trees = []) {
+        // Update animation phase
+        this.animPhase += deltaTime * 0.01;
+        
         const dx = player.x - this.x;
         const dy = player.y - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
