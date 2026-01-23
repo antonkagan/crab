@@ -34,6 +34,10 @@ export default class Game {
         this.desertDamageTimer = 0;
         this.desertDamageInterval = 5000; // damage every 5 seconds
         
+        // Apple spawning system
+        this.appleSpawnTimer = 0;
+        this.appleSpawnInterval = 3000; // spawn apple every 3 seconds
+        
         // Boss system
         this.bossSpawnThresholds = [100, 200, 300];
         this.bossesSpawned = [false, false, false];
@@ -828,6 +832,7 @@ export default class Game {
         this.evolutionPoints = 0;
         this.applesCollected = 0;
         this.enemySpawnTimer = 0;
+        this.appleSpawnTimer = 0;
         this.desertDamageTimer = 0;
         this.bossesSpawned = [false, false, false];
         this.bossesKilled = 0;
@@ -886,8 +891,8 @@ export default class Game {
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
                 if (this.surface.grid[row] && this.surface.grid[row][col] === 'grass') {
-                    // Random chance to spawn an apple (15% chance per grass tile)
-                    if (Math.random() < 0.15) {
+                    // Random chance to spawn an apple (5% chance per grass tile)
+                    if (Math.random() < 0.05) {
                         // Spawn apple at random position within the grass tile
                         const tileX = col * this.surface.gridSize;
                         const tileY = row * this.surface.gridSize;
@@ -907,6 +912,58 @@ export default class Game {
                         }
                     }
                 }
+            }
+        }
+    }
+    
+    // Spawn a single apple off-screen on grass
+    spawnAppleOffScreen() {
+        const gridSize = this.surface.gridSize;
+        
+        // Get viewport bounds
+        const viewportLeft = this.camera.x;
+        const viewportRight = this.camera.x + this.width;
+        const viewportTop = this.camera.y;
+        const viewportBottom = this.camera.y + this.height;
+        
+        // Buffer distance outside viewport
+        const buffer = 100;
+        const spawnDistance = 200; // How far off-screen to spawn
+        
+        // Try to find a valid grass tile off-screen (max 50 attempts)
+        for (let attempt = 0; attempt < 50; attempt++) {
+            // Pick a random side (0=top, 1=right, 2=bottom, 3=left)
+            const side = Math.floor(Math.random() * 4);
+            let x, y;
+            
+            switch (side) {
+                case 0: // top
+                    x = viewportLeft + Math.random() * this.width;
+                    y = viewportTop - buffer - Math.random() * spawnDistance;
+                    break;
+                case 1: // right
+                    x = viewportRight + buffer + Math.random() * spawnDistance;
+                    y = viewportTop + Math.random() * this.height;
+                    break;
+                case 2: // bottom
+                    x = viewportLeft + Math.random() * this.width;
+                    y = viewportBottom + buffer + Math.random() * spawnDistance;
+                    break;
+                case 3: // left
+                    x = viewportLeft - buffer - Math.random() * spawnDistance;
+                    y = viewportTop + Math.random() * this.height;
+                    break;
+            }
+            
+            // Clamp to world bounds
+            x = Math.max(gridSize, Math.min(this.worldWidth - gridSize, x));
+            y = Math.max(gridSize, Math.min(this.worldHeight - gridSize, y));
+            
+            // Check if this position is on grass
+            const surfaceType = this.surface.getSurfaceAt(x, y);
+            if (surfaceType === 'grass') {
+                this.apples.push(new Apple(x, y));
+                return; // Successfully spawned
             }
         }
     }
@@ -1109,6 +1166,13 @@ export default class Game {
         if (this.enemySpawnTimer >= this.enemySpawnInterval) {
             this.spawnEnemy();
             this.enemySpawnTimer = 0;
+        }
+        
+        // Spawn apples off-screen over time
+        this.appleSpawnTimer += this.deltaTime;
+        if (this.appleSpawnTimer >= this.appleSpawnInterval) {
+            this.spawnAppleOffScreen();
+            this.appleSpawnTimer = 0;
         }
         
         // Check if Void Emperor's buff is active
@@ -1646,6 +1710,8 @@ export default class Game {
         this.particles = [];
         this.evolutionPoints = 0;
         this.applesCollected = 0;
+        this.enemySpawnTimer = 0;
+        this.appleSpawnTimer = 0;
         this.desertDamageTimer = 0;
         this.bossesSpawned = [false, false, false];
         this.bossesKilled = 0;
