@@ -16,7 +16,7 @@ export default class Game {
         this.width = canvas.width = window.innerWidth;
         this.height = canvas.height = window.innerHeight;
         
-        this.state = 'menu'; // menu, playing, mutation, gameOver
+        this.state = 'menu'; // menu, playing, paused, mutation, gameOver
         this.lastTime = 0;
         this.deltaTime = 0;
         
@@ -88,6 +88,15 @@ export default class Game {
                 e.preventDefault();
             }
             
+            // Escape key to pause/resume
+            if (e.key === 'Escape') {
+                if (this.state === 'playing') {
+                    this.pause();
+                } else if (this.state === 'paused') {
+                    this.resume();
+                }
+            }
+            
             // Super evolution ability keys (1-6)
             if (this.state === 'playing' && this.player) {
                 const creatures = ['gorilla', 'crab', 'bee', 'elephant', 'bird', 'fox'];
@@ -123,6 +132,11 @@ export default class Game {
         
         // Tutorial button listeners
         this.tutorial.setupEventListeners();
+        
+        // Pause/Resume button listener
+        document.getElementById('resume-button')?.addEventListener('click', () => {
+            this.resume();
+        });
     }
     
     playerAttack() {
@@ -863,7 +877,7 @@ export default class Game {
     }
     
     gameLoop(timestamp) {
-        if (this.state === 'gameOver' || this.state === 'menu') {
+        if (this.state === 'gameOver' || this.state === 'menu' || this.state === 'paused') {
             return;
         }
         
@@ -1105,12 +1119,17 @@ export default class Game {
                     }
                 }
             } else {
-                // Normal bosses are blocked by trees
+                // Normal bosses are pushed away from trees
                 for (const tree of this.trees) {
                     if (tree.checkCollision(boss.x, boss.y, boss.radius)) {
-                        boss.x = oldBossX;
-                        boss.y = oldBossY;
-                        break;
+                        const pushDx = boss.x - tree.x;
+                        const pushDy = boss.y - tree.y;
+                        const pushDist = Math.sqrt(pushDx * pushDx + pushDy * pushDy);
+                        if (pushDist > 0) {
+                            const overlap = tree.radius + boss.radius - pushDist;
+                            boss.x += (pushDx / pushDist) * (overlap + 2);
+                            boss.y += (pushDy / pushDist) * (overlap + 2);
+                        }
                     }
                 }
             }
@@ -1524,6 +1543,20 @@ export default class Game {
         document.getElementById('game-over-message').textContent = message;
         document.getElementById('game-over-screen').classList.remove('hidden');
         document.getElementById('hud').classList.add('hidden');
+    }
+    
+    pause() {
+        if (this.state !== 'playing') return;
+        this.state = 'paused';
+        document.getElementById('pause-screen').classList.remove('hidden');
+    }
+    
+    resume() {
+        if (this.state !== 'paused') return;
+        this.state = 'playing';
+        document.getElementById('pause-screen').classList.add('hidden');
+        this.lastTime = performance.now(); // Reset lastTime to avoid huge deltaTime
+        this.gameLoop(performance.now());
     }
     
     restart() {
