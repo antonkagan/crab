@@ -89,8 +89,8 @@ export default class Boss {
             
             // Curse ability - attacking this boss curses you
             this.hasCurse = true;
-            this.curseDamage = 10; // Damage dealt by curse
-            this.curseInterval = 20000; // Every 20 seconds
+            this.curseDamage = 2; // Damage dealt by curse
+            this.curseInterval = 1000; // 2 HP per second
         } else {
             this.hasSpikesAbility = false;
             this.spikesActive = false;

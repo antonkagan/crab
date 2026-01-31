@@ -47,8 +47,8 @@ export default class Game {
         // Crimson Overlord curse system
         this.isCursed = false;
         this.curseTimer = 0;
-        this.curseDamage = 10;
-        this.curseInterval = 20000;
+        this.curseDamage = 2;
+        this.curseInterval = 1000; // 2 HP per second
         
         // Attack visual effect
         this.attackEffect = null;
